@@ -1,5 +1,13 @@
+
+{# 
+   これはVirutal Hostの設定を生成するテンプレートです。
+   記法はPythonのjinja2テンプレートエンジンです。
+   変数はvars/{指定STAGE}.yml から読み込んで展開されます。
+#}
 <VirtualHost *:80>
     ServerName {{ HOST_NAME }}
+
+    {% if MY_ENV | length > 1 %}SetEnv MY_ENV "{{ MY_ENV }}"{% endif %}
 
     DocumentRoot /home/ubuntu/myapp/current/public
     ErrorLog /home/ubuntu/logs/error.log
@@ -12,5 +20,4 @@
         AllowOverride All
         Require all granted
     </Directory>
-
 </VirtualHost>
