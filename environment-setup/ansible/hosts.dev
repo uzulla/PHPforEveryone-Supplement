@@ -1,0 +1,5 @@
+[web-server]
+192.168.0.1:22 ansible_ssh_user=ubuntu ansible_ssh_common_args="-i ~/.ssh/aws_ssh_key.pem -oProxyCommand='ssh -W %h:%p fumidai-server'"
+
+[all:vars]
+stage=dev

@@ -1,0 +1,30 @@
+- hosts: web-server
+  become: yes
+  tasks:
+    - name: update and upgrade
+      apt:
+        update_cache: yes
+        upgrade: full
+
+    - name: Install a list of packages
+      apt:
+        name: "{{ packages }}"
+        update_cache: yes
+        autoclean: yes
+        autoremove: yes
+      vars:
+        packages:
+          - apache2
+          - make
+          - sqlite3
+          - unzip
+          - mysql-server
+          - php
+          - php-xml
+          - php-mbstring
+          - php-zip
+          - php-sqlite3
+          - php-mysql
+          - php-curl
+          - git
+

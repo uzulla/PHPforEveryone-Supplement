@@ -1,0 +1,79 @@
+- hosts: web-server
+  become: yes
+  vars_files:
+    - vars/{{ stage }}.yml
+  tasks:
+    - name: mkdir /home/ubuntu/logs 
+      file: path=/home/ubuntu/logs state=directory mode=0755 owner=ubuntu
+
+    - name: mkdir /home/ubuntu/myapp/current/public
+      file: path=/home/ubuntu/myapp/current/public state=directory mode=0755 owner=ubuntu
+
+    - name: copy dummy html
+      copy:
+        src: apache_conf/dummy.html
+        dest: /home/ubuntu/myapp/current/public/index.html
+        owner: ubuntu
+        mode: 0644
+
+    - name: copy phpinfo
+      copy:
+        src: apache_conf/myphpinfo.php
+        dest: /home/ubuntu/myapp/current/public/myphpinfo.php
+        owner: ubuntu
+        mode: 0644
+
+    - name: enable Apache2 mod_rewrite
+      apache2_module:
+        state: present
+        name: rewrite
+
+    - name: enable Apache2 mod_ssl
+      apache2_module:
+        state: present
+        name: ssl
+
+    - name: enable Apache2 Remote IP Header
+      apache2_module:
+        state: present
+        name: remoteip
+
+    - name: deactivates security.conf
+      command: a2disconf security
+
+    - name: push more_secure.conf
+      copy:
+        src: apache_conf/more_secure.conf
+        dest: /etc/apache2/conf-available/more_secure.conf
+        mode: 0640
+
+    - name: activates more_secure.conf
+      command: a2enconf more_secure
+
+    - name: dectivates un-used virtualhost 000-default
+      command: a2dissite 000-default
+
+    - name: dectivates un-used virtualhost default-ssl.conf
+      command: a2dissite default-ssl.conf
+
+    - name: copy php.ini
+      copy:
+        src: php/php.ini
+        dest: /etc/php/7.3/apache2/php.ini
+        mode: 0640
+
+    - name: generate amd copy virtual host conf
+      template:
+        src: apache_conf/mysite.j2
+        dest: /etc/apache2/sites-available/mysite.conf
+
+    - name: Activates our virtualhost
+      command: a2ensite mysite
+
+    - name: restart apache
+      systemd:
+        name: apache2
+        state: reloaded
+        daemon_reload: yes
+        enabled: yes
+

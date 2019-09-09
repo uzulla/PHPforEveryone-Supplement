@@ -1,0 +1,16 @@
+<VirtualHost *:80>
+    ServerName {{ HOST_NAME }}
+
+    DocumentRoot /home/ubuntu/myapp/current/public
+    ErrorLog /home/ubuntu/logs/error.log
+    CustomLog /home/ubuntu/logs/access.log combined
+
+    RemoteIPHeader X-Forwarded-For
+
+    <Directory /home/ubuntu/myapp/current/public>
+        Options FollowSymlinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+</VirtualHost>
