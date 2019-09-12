@@ -1,6 +1,30 @@
-以下、書籍の補完、追記となります。
+以下は書籍「みんなのPHP」、第４章「ビルトインウェブサーバー」節の追加情報等となります。
 
-# ログ
+
+
+## サンプルコード
+
+https://github.com/uzulla/Mizam
+
+### セットアップと起動
+
+```
+$ git clone git@github.com:uzulla/Mizam.git
+$ cd Mizam
+$ make dev-setup
+# composer.pharのダウンロード、composer installの実行、サンプル設定ファイルのコピー、sqlite DBの作成などが行われます。
+$ make start
+# あるいは
+$ cd public
+$ php -S 127.0.0.1:8080
+# ビルトインウェブサーバーが起動しますので、ブラウザで開いて下さい。
+```
+
+
+
+## ビルトインウェブサーバーのログ出力
+
+### ファイルへの同時保存
 
 teeがあれば、画面へ出しつつファイルにも保存が可能です。
 
@@ -8,9 +32,12 @@ teeがあれば、画面へ出しつつファイルにも保存が可能です�
 $ php -S 127.0.0.1:8080 2>&1 | tee log
 ```
 
-`php.ini`に設定することでも変更が可能です。
+### php.iniでの設定
+
+php.ini`に設定することでも変更が可能です。
 
 `コードに記述する例`
+
 ```
 <?php
 ini_set('error_log', 'my_error.log');
@@ -18,6 +45,7 @@ echo $undefined_var;
 ```
 
 `php.iniに記述する例`
+
 ```
 [php]
 error_log='my_error.log'
@@ -25,16 +53,19 @@ error_log='my_error.log'
 
 
 
-# Basic認証とIP制限の実装例
+## Basic認証とIP制限の実装例
 
-静的ファイルは不可能だが、PHPの動的な箇所ならばBasic認証をつくる事はできる。
+静的ファイルは不可能ですが、PHPの動的な箇所ならばBasic認証をつくる事はできます。
+
+`サンプルコード`
 
 ```
 <?php 
-# 実コードでは$plain_username,$hashed_password,$allow_ip_listは
-# このようにコードには書かず、安全な場所に記述して参照してください。
-# hashed_passwordは以下のようにして生成できます。
-# $ php -r 'echo password_hash("very_difficult_password", PASSWORD_DEFAULT).PHP_EOL;'
+# 実コードでは
+# $plain_username,$hashed_password,$allow_ip_list
+# はこのようにコードにうめこまないようにしましょう。
+# ここで用いている hashed_password は以下のようにして生成できます。
+# $ php -r 'echo password_hash("好きなパスワード", PASSWORD_DEFAULT).PHP_EOL;'
 
 $plain_username = 'unique_user_name';
 $hashed_password = '$2y$10$yeYvL5a5byS1QvTIgyCYcOWZNNApNC5Ags1J2.uZz5iwwnyfQFEfy';
@@ -53,8 +84,13 @@ if (
     exit;
 }
 
-// ロードバランサやプロキシが入る場合はREMOTE_ADDRは使えません
-$client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? false;
+$client_ip = $_SERVER['REMOTE_ADDR'] ?? false;
+# ロードバランサやプロキシが入る場合はREMOTE_ADDRは使えません。
+# よって、以下のように"X-Forwarded−For"ヘッダーをつかいますが、
+# 信用できるインフラにおいてのみ使えます。無条件に以下コードをもちいてはいけません。
+# Injectionの危険性があります。
+// $client_ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? false;
+
 if ($client_ip === false || array_search($client_ip, $allow_ip_list) === false) {
     error_log("IP制限");
     http_response_code(403);
@@ -66,12 +102,22 @@ echo "認証成功";
 // ...
 ```
 
-# ルータースクリプト
+## ルータースクリプト例
+
+
 
 > ルータースクリプトの情報 https://www.php.net/manual/ja/features.commandline.webserver.php
 
 
-# socatをTLS Termination Proxy となるリバースプロキシに用いたビルトインウェブサーバーでのhttps通信の実現
+
+もし静的なファイルが不要で（APIしか存在しないようなケース）あれば、以下のようにすることで「必ず」index.phpに処理をさせることもできます。たとえば、`.`がURLに入るケースにも適用できます。
+
+```
+$ php -S 127.0.0.1:8080 index.php
+```
+
+
+## socatをTLS Termination Proxy となるリバースプロキシに用いたビルトインウェブサーバーでのhttps通信の実現
 
 `socatを使う例`
 
@@ -93,7 +139,11 @@ $ socat openssl-listen:3443,fork,verify=0,cert=server.key_and_crt TCP4:localhost
 # この状態で、https://localhost:3443/ にアクセス
 ```
 
-# 環境変数を設定して、ビルトインウェブサーバーを起動するシェルスクリプト
+
+
+## 設定情報の設定例
+
+### 環境変数を設定して、ビルトインウェブサーバーを起動するシェルスクリプト
 
 ```
 #!/bin/bash
@@ -105,3 +155,33 @@ export MY_NAME=hogehoge
 # 起動
 php -S 127.0.0.1:8080
 ```
+
+環境変数をphpdotenvから読み込む例
+
+`ライブラリの準備`
+
+```
+$ composer require vlucas/phpdotenv
+```
+
+`my.env例`
+
+```
+# 環境変数名=パラメタ と記述します。
+DB_USER=my-db-user
+DB_PASS="my db password!"
+```
+
+`コード例`
+
+```
+<?php
+require_once(__DIR__ . "/../vendor/autoload.php");
+
+Dotenv::create('/path/to/my.env')->load();
+
+$my_db_user = getenv('my-db-user');
+```
+
+実際の利用例としては、サンプルコードの`src/Env.php`などをご覧ください。
+
