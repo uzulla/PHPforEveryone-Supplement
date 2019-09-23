@@ -1,1 +1,4 @@
+# playbookなどから参照する変数を指定できます。
+# この「ファイル自体」は sample.hostsファイル等の [all:vars]\nstage=dev で指定できます（stg.ymlなど作ることができる）
+ENV: "dev"
 HOST_NAME: "my-site.example.jp"

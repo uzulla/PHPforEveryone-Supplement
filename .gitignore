@@ -1,1 +1,4 @@
 /environment-setup/deployer/deployer.phar
+/environment-setup-sample/ansible/*.hosts
+!/environment-setup-sample/ansible/sample.hosts
+/environment-setup-sample/ansible/*.retry

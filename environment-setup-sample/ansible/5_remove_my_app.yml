@@ -1,0 +1,7 @@
+- hosts: web-server
+  tasks:
+    - name: remove myapp path
+      file:
+        state: absent
+        path: "~/myapp/"
+        

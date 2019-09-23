@@ -1,0 +1,11 @@
+- hosts: web-server
+  become: yes
+  tasks:
+    - name: add repo ppa:ondrej/php
+      apt_repository: repo="ppa:ondrej/php"
+    - name: add repo ppa:ondrej/apache2
+      apt_repository: repo="ppa:ondrej/apache2"
+    - name: update and upgrade
+      apt:
+        update_cache: yes
+        upgrade: full

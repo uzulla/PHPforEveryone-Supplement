@@ -7,7 +7,7 @@
 <VirtualHost *:80>
     ServerName {{ HOST_NAME }}
 
-    {% if MY_ENV | length > 1 %}SetEnv MY_ENV "{{ MY_ENV }}"{% endif %}
+    {% if ENV | length > 1 %}SetEnv ENV "{{ ENV }}"{% endif %}
 
     DocumentRoot /home/ubuntu/myapp/current/public
     ErrorLog /home/ubuntu/logs/error.log

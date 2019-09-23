@@ -1,6 +1,114 @@
 以下は書籍「みんなのPHP」、第４章「ビルトインウェブサーバー」節の追加情報等となります。
 
 
+## Windows で Ubuntuを使う手順
+
+現在のWindows はUbuntu(Linux)を動かすことができます。Windowsで直接PHPを動かすことはできますが、他の環境との差異や、昨今のPHPをとりまくツール群の使い方には差異があるため、基本的にはWindowsでもLinux環境上でPHPを動かすことを推奨します。
+
+なお、これはWindows 10 バージョン1709からの機能で、それ以前のWindowsはアップデートが必要です。
+
+大まかな手順としては
+
+- Windows Subsystem Linuxを有効化する
+- Ubuntu (18.04LTS)をStoreからインストールする
+- PHPをaptでインストールする
+- アプリケーションを用意、作成する
+
+となります。
+
+### Windows Subsystem Linux（WSL）を有効化
+
+https://docs.microsoft.com/ja-jp/windows/wsl/install-win10
+
+スタートメニューからPowerShellを右クリックして管理者権限で実行し、以下を実行します。
+
+```
+> Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
+# `>`部分はシェルプロンプトの意味ですので、Enable〜から入力してください 
+```
+
+実行すると、再起動するか質問されるので、YとタイプしてからEnterキーで了承します。
+
+## Ubuntuのインストール
+
+スタートメニューからMicrosoft storeを開き、ubuntuで検索します。結果にでてくるUbuntu 18.04LTS をインストールして下さい。
+
+インストールが完了したら、スタートメニューからUbuntuを実行します。
+
+初回実行時、Ubuntuはユーザー名とパスワードを別途指定する必要があります。ユーザー名はアルファベットか数字のみ、記号や空白はいれないことを推奨します。（たとえば、ubuntu など）
+
+これらが完了すると、シェル（bash）が起動します。
+
+### PHPのインストール
+
+UbuntuにはPHPがデフォルトでは入っていませんので、aptでインストールします。 php7.3系を入れたいので、非公式のレポジトリを追加します。
+
+Sudo時のパスワードは先程設定したパスワードです
+
+```
+$ sudo apt install software-properties-common
+$ sudo apt-add-repository ppa:ondrej/php
+$ sudo apt update
+$ sudo apt instal php7.3 php7.3-xml php7.3-mbstring php7.3-zip php7.3-sqlite3 php7.3-curl php7.3-gd git make sqlite3 unzip
+```
+
+インストールが完了すると、phpコマンドが利用できます
+
+```
+$ php -v 
+```
+
+でバージョンが表示されるか確認してください
+
+### 作業ディレクトリの作成
+
+WSL内のファイルはWindows(のExplorerなど)から直接見えませんが、`/mnt/c/` 以下が `c:\` とマップされています。`/mnt/c/project`（Windowsからは`c:\project`）を作成して、そちらで作業することにします。
+
+```
+# ディレクトリ作成、このディレクトリは c:\project\phpinfo になります
+$ mkdir -p /mnt/c/project/phpinfo
+$ cd /mnt/c/project/phpinfo
+
+# phpinfo()が記述されたindex.phpを作成する。`c:\project\phpinfo\index.php` をエディタで作成してもかまいません。
+$ echo "<?php phpinfo();" > index.php
+
+# ビルトインウェブサーバーを起動
+$ php -S 127.0.0.1:8080
+
+# ビルトインウェブサーバーを起動したまま、ブラウザで http://127.0.0.1:8080/ をひらき、phpinfo出力（青い画面で、Versionが表示されている）を確認します。
+# 確認ができたら、Ctrl+Cで終了
+```
+
+以上でPHPのビルトインウェブサーバーの利用準備がととのいました。以後は基本的にLinuxと同じ操作をして下さい。
+
+
+### 補足：サンプルアプリケーションのデプロイ例
+
+```
+# サンプルアプリケーションのクローン（ダウンロード）
+$ cd  /mnt/c/project/
+$ git clone https://github.com/uzulla/Mizam.git
+$ cd Mizam
+
+# サンプルアプリケーションの初期設定（アプリに同梱された自動化スクリプトを利用）
+$ make dev-setup
+
+# アプリを起動する
+$ make start
+# あるいは
+$ cd public
+$ php -S 127.0.0.1:8080
+
+# 起動したらブラウザで http://127.0.0.1:8080/  開きます
+```
+
+### 補足：Windowsのエディタについて
+
+Windowsには様々なエディタがありますが、最近ですとVisual Studio codeを用いるとよいでしょう。
+
+https://code.visualstudio.com/
+
+AddonでPHP IntelephenseなどPHP用の拡張をいれるとよいでしょう。
 
 ## サンプルコード
 

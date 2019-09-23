@@ -3,26 +3,6 @@
   vars_files:
     - vars/{{ stage }}.yml
   tasks:
-    - name: mkdir /home/ubuntu/logs 
-      file: path=/home/ubuntu/logs state=directory mode=0755 owner=ubuntu
-
-    - name: mkdir /home/ubuntu/myapp/current/public
-      file: path=/home/ubuntu/myapp/current/public state=directory mode=0755 owner=ubuntu
-
-    - name: copy dummy html
-      copy:
-        src: apache_conf/dummy.html
-        dest: /home/ubuntu/myapp/current/public/index.html
-        owner: ubuntu
-        mode: 0644
-
-    - name: copy phpinfo
-      copy:
-        src: apache_conf/myphpinfo.php
-        dest: /home/ubuntu/myapp/current/public/myphpinfo.php
-        owner: ubuntu
-        mode: 0644
-
     - name: enable Apache2 mod_rewrite
       apache2_module:
         state: present
@@ -69,6 +49,26 @@
 
     - name: Activates our virtualhost
       command: a2ensite mysite
+
+    - name: mkdir /home/ubuntu/logs 
+      file: path=/home/ubuntu/logs state=directory mode=0755 owner=ubuntu
+
+    - name: mkdir /home/ubuntu/myapp/current/public
+      file: path=/home/ubuntu/myapp/current/public state=directory mode=0755 owner=ubuntu
+
+    - name: copy dummy html
+      copy:
+        src: apache_conf/dummy.html
+        dest: /home/ubuntu/myapp/current/public/index.html
+        owner: ubuntu
+        mode: 0644
+
+    - name: copy phpinfo
+      copy:
+        src: apache_conf/myphpinfo.php
+        dest: /home/ubuntu/myapp/current/public/myphpinfo.php
+        owner: ubuntu
+        mode: 0644
 
     - name: restart apache
       systemd:

@@ -1,0 +1,38 @@
+- hosts: web-server
+  tasks:
+    - name: git_clone
+      git: 
+        repo: "https://github.com/uzulla/Mizam.git"
+        dest: "~/myapp/current"
+        version: "master"
+    - name: make dev-setup
+      make:
+        chdir: "~/myapp/current"
+        target: dev-setup
+    - name: chmod sqlite db dir
+      file: 
+        path: ~/myapp/current/db/
+        state: touch
+        mode: "777"
+    - name: chmod sqlite db file
+      file:
+        path: ~/myapp/current/db/sqlite.db
+        state: touch
+        mode: "666"
+    - name: chmod upload_files/original_files dir
+      file: 
+        path: ~/myapp/current/upload_files/original_files
+        state: touch
+        mode: "777"
+    - name: chmod upload_files/thumbnail_files/ dir
+      file: 
+        path: ~/myapp/current/upload_files/thumbnail_files/
+        state: touch
+        mode: "777"
+    - name: restart apache
+      become: yes
+      systemd:
+        name: apache2
+        state: reloaded
+        daemon_reload: yes
+        enabled: yes

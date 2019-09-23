@@ -1,0 +1,9 @@
+[web-server]
+# 以下は 192.168.0.1 のポート22にubuntuユーザーでログインし、秘密鍵は ~/.ssh/aws_ssh_key.pem を利用する例です。
+192.168.0.1:22 ansible_ssh_user=ubuntu ansible_ssh_common_args="-i ~/.ssh/ssh_key.pem"
+
+# もし踏み台となるsshサーバー利用する場合は ansible_ssh_common_argsに-oでProxyCommandの設定をおこなうとよいでしょう
+# 192.168.0.1:22 ansible_ssh_user=ubuntu ansible_ssh_common_args="-i ~/.ssh/ssh_key.pem -oProxyCommand='ssh -W %h:%p fumidai-server'"
+
+[all:vars]
+stage=dev

@@ -10,7 +10,3 @@
         - "deb http://archive.ubuntu.com/ubuntu/ bionic universe"
         - "deb http://archive.ubuntu.com/ubuntu/ bionic-updates universe"
         - "deb http://security.ubuntu.com/ubuntu/ bionic-security universe"
-    - name: add repo ppa:ondrej/php
-      apt_repository: repo="ppa:ondrej/php"
-    - name: add repo ppa:ondrej/apache2
-      apt_repository: repo="ppa:ondrej/apache2"

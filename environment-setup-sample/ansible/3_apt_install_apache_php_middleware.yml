@@ -1,11 +1,6 @@
 - hosts: web-server
   become: yes
   tasks:
-    - name: update and upgrade
-      apt:
-        update_cache: yes
-        upgrade: full
-
     - name: Install a list of packages
       apt:
         name: "{{ packages }}"
@@ -26,5 +21,6 @@
           - php-sqlite3
           - php-mysql
           - php-curl
+          - php-gd
           - git
 
