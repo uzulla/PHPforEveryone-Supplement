@@ -1,36 +1,60 @@
-# メモリ消費量を確認するコード
+## 1リクエストあたりに必要なメモリ量の確認
 
-サーバー全体のメモリ消費量は`top`コマンドで確認できますが、`memory_get_peak_usage()`などを用いて１リクエストの最大消費量を把握しましょう。その際にはデータ量を本番同等とするのと忘れずに。具体的なコードはサンプルコードを参照してください。
+1リクエストあたりに必要なメモリ量は、プログラムの最後に`memory_get_peak_usage()`を実行することで確認できます。
 
-以下のコードを先頭に挿入することで、終了時にそのリクエストでのメモリの最大消費値をログに出力します。
-
-
-
-```
+```php
 <?php
-# `register_shutdown_function`を設定し、終了時にエラーログへ出力する
-register_shutdown_function(function () {
-  error_log("memory_get_peak_usage ".memory_get_peak_usage(false));
-});
+// 処理
+echo memory_get_peak_usage();
 ```
 
-# 帯域測定ツール
+ただ、上記だと様々なところでexitされうる実際のアプリケーションでは使いづらいので、例えば以下のように`shutdown_function`を先頭に差し込むと、プログラム終了時にログに出力することができます。
 
-帯域計測ツールとしては`speedtest-cli`などがあります。
+```php
+<?php
+register_shutdown_function(function () {
+    $memory = memory_get_peak_usage(false);
+    $url = $_SERVER['REQUEST_URI'] ?? "-";
+    error_log("memory peak: " . sprintf("%.2f kbytes", $memory / 1024)) . " {$url}";
+});
+
+// your code.
+echo "Hello, world" . PHP_EOL;
+$big_array = [];
+$i = 1000000;
+while ($i--) { // メモリを大きく消費する
+    $big_array[] = $i;
+}
+```
+
+## 帯域の確認方法
+
+帯域計測ツールとしてはspeedtest-cliなどがあります。試用期間中はネットワークに制限がかかる業者も多くありますので、可能であれば調査費用と割り切って実際に契約も行っての試験をおすすめします（その場合、最低契約期間に注意しましょう）。
 
 > sivel/speedtest-cli https://github.com/sivel/speedtest-cli
 
-# ディスク容量について
+速度だけではなくpingなどで確認できるネットワークレイテンシも重要です。ping値は時間帯で変動するので、長時間動かしてのチェックを推奨します。以下のようなコマンドを実行し、丸一日の変動を確保して確認するとよいでしょう。ping値は計測するマシンにかなり依存するので、Wifi経由でなく、Etherなど優先接続された(あるいは別のVPSなどから)計測することを勧めます。
+
+```
+$ watch -t -n 30 "(LANG=C date '+%Y-%m-%d %H:%M:%S'| tr '\n' ' ' && ping -c 3 some.example.jp |grep round) | tee -a pinglog"
+```
+
+```
+$ cat pinglog
+2019-10-09 12:07:16 round-trip min/avg/max/stddev = 43.002/55.466/67.397/9.966 ms
+2019-10-09 12:07:41 round-trip min/avg/max/stddev = 44.805/77.981/137.774/42.365 ms
+2019-10-09 12:07:46 round-trip min/avg/max/stddev = 41.737/76.068/132.125/39.971 ms
+```
+
+## ディスク容量について
 
 ディスクサイズはOS＋アプリ＋データの３〜４倍程度で十分ですが、２倍を切ると不便が生じがちです。ただ容量を無駄に消費しやすいのがログとバックアップで、ローテーション（圧縮や削除）することで節約しましょう。
 
-# 無料ドメインなどのキャンペーン
+## 無料ドメインなどのキャンペーン
 
 VPSならドメインはどこで契約してもかわりません。転出を防ぐ条項があって縛られないか注意しましょう。また、ネームサーバーの適切な運用には知識と手間が必要です。できるだけCloudFlareやAWSのRoute53などをSaaSを利用しましょう。
 
-
-
-# UbuntuにおけるApache+mod_phpの設定
+## UbuntuにおけるApache+mod_phpの設定
 
 `my-site.conf`
 ```
@@ -113,6 +137,9 @@ $ sudo git commit -a
 # 以後、なんらか修正するたびにcommitしていく
 ```
 
+あるいは、AnsibleやDeployerで処理することも検討できます。[本レポジトリの`environment-setup-sample/ansbile`にサンプルがあります](environment-setup/ansible/README.md)。
+
+
 ### 備考 Nginx+fastCGIについて
 
 Nginxは一般にApacheをしのぐ配信性能を持ちます。同時接続数が多い高負荷サイトでは有用ですが、NginxがPHP自体の速度を高速化するわけではありませんので効果は用途次第です。
@@ -120,21 +147,29 @@ Nginxは一般にApacheをしのぐ配信性能を持ちます。同時接続数
 NginxはPHPとFastCGIで連携して動作しますが、その設定はApacheとくらべてとても複雑です。また`php-fpm`は別途で設定して運用する必要があります。
 
 
-# エラー関連
+## エラー関連
+
+典型的なエラー周りの設定例を挙げます。
 
 `php.ini例`
 
 ```
+# PHPのエラーログを有効にします
 log_errors=1
+# 画面に出力するか？
 display_errors=0
+# スタートアップのエラーを画面に出力するか？
 display_startup_errors=0
+# エラーのレベルを指定（-1であらゆるエラーを出力、E_ALLでもかまいません)
 error_reporting=-1
+# エラーファイルを独自指定するか？
+# コメントアウトして指定しなければSAPIに応じますが、たとえばApacheのエラーログ等に出力されます
 error_log=/home/ubuntu/php_error.log
 ```
 
 ログは確認しなければ意味がありませんが、標準のApacheのエラーログと一緒に出力する方式では、404 notfoundなども混じって膨大な量になって無視されがちです。`error_log`を指定して、重要であるphpのエラーのみが出力されるログを作るとよいでしょう。
 
-また、減らした上でswatch(ソフトウェア)やPapertrail(SaaS)などを活用し、アラートを飛ばす仕組みを構築するとと便利です。
+また、ログ送料を減らした上でswatch(ソフトウェア)やPapertrail(SaaS)などを活用し、条件マッチでアラートを飛ばす仕組みを構築するとと便利です。
 
 ### 同時接続数増加時の対応について
 
@@ -144,14 +179,17 @@ error_log=/home/ubuntu/php_error.log
 
 ### デプロイユーザーとPHPの実行ユーザー
 
-`httpd-conf`
+デプロイ(ファイルを設置するためにログインするアカウント)ユーザーとPHPの実行ユーザーが異なると、作業に支障がある場合があります。共用のサーバーでなければログインユーザーの権限で動作させてもよいでしょう。
+
+例えば以下のように変更することで、Apacheの実行ユーザーを変更できます。
+
+`httpd.conf`
 ```
 #User www-data
 User ubuntu
 ```
-このように変更することで、Apacheの実行ユーザーを変更してしまうこともできます。
 
-# デプロイ
+## デプロイ
 
 一般的な解決策は、別にファイル一式を別ディレクトリに準備し、、シンボリックリンクで切り替える方法です。この手法だと旧コードに戻す事も可能です。
 
@@ -180,6 +218,8 @@ $ sudo systemctl reload apache2
 
 > Deployer: https://deployer.org/
 
+deployerの例は本レポジトリの`enviroment-setup/deployer`に添付いたします。
+
 ### DB スキーマ変更など
 
 DBにSQLを流したい時はclientを手元にインストールし、SSHポートフォワードの機能などを用いてリモート接続するのが良いでしょう。
@@ -194,7 +234,9 @@ $ ssh -L 33306:127.0.0.1:3306 your-server.example.jp
 > DBeaver https://dbeaver.io/
 > Sequel Pro https://www.sequelpro.com/
 
-# 監視用のPHP
+さらによいのはDB migration toolを活用することですが、今回は省略します。Laravelなどフルスタックフレームワークや、高機能なORMには用意されています。
+
+## 監視用のPHP
 
 `my_check_url_abcd456.php`
 ```
@@ -204,7 +246,7 @@ try{
   $pdo = new PDO(/*適切に*/);
   $pdo->query(/*適当なSQL*/);
   # 空き容量確認
-  $free_space_mb = disk_free_space("/home/ubuntu") /1024 /1024;
+  $free_space_mb = disk_free_space("/home/ubuntu") /1024 /1024; // byteをMbyteに変換
   if($free_space_mb<1024){
   	throw new \Exception("disk full");
   }
@@ -223,18 +265,17 @@ try{
 > Mackerel https://mackerel.io/ja/
 
 
-### 設定の記述
+## 設定の記述
 
 VPSにおいても環境変数を用いる事ができます。systemd経由で起動するApache+PHPに環境変数を渡すにはsercviceファイルの`EnviromentFile`に記述するのがよいでしょう。詳しくはサンプルコードを参照してください。
-`/home/ubuntu/MyEnviromentFIle (新規作成)`
 
+`/home/ubuntu/MyEnviromentFIle (新規作成)`
 ```
 ENV=dev
 DB_USER=username
 ```
 
 `/lib/systemd/system/apache2.service`
-
 ```
 [Service]
 # EnvironmentFile行を追加
@@ -245,28 +286,11 @@ EnvironmentFile=/home/ubuntu/MyEnviromentFIle
 
 ## php.iniの場所
 
+php.iniの場所はコマンドで確認するのが一番よいでしょう。
+
 ```
 $ php --ini
 Loaded Configuration File:         /php.ini
-```
-
-
-# エラー関連
-
-`php.ini例`
-
-```
-# PHPのエラーログを有効にします
-log_errors=1
-# 画面に出力するか？
-display_errors=0
-# スタートアップのエラーを画面に出力するか？
-display_startup_errors=0
-# エラーのレベルを指定（-1であらゆるエラーを出力)
-error_reporting=-1
-# エラーファイルを独自指定するか？
-# コメントアウトして指定しなければ、Apacheのエラーログ等に出力されます
-error_log=/home/ubuntu/php_error.log
 ```
 
 ### xdebugと手元のPCとのやり取り
@@ -281,19 +305,23 @@ $ ssh -R 127.0.0.1:9000:127.0.0.1:9000 your-dev-server.example.jp
 # ポート番号はxdebugの設定に応じて変更してください
 ```
 
+## xdebugの有効化、無効化
 
-
-# xdebugの有効化、無効化
-
-オフにしておくには以下のようにして無効にします。（UbuntuLinuxの場合）
+以下のようにして無効(読み込みをさせない)にします。
 
 ```
+# Ubuntu で、パッケージで導入した場合
 $ sudo phpdismod xdebug
+
+# それ以外の場合
+$ php --ini
+# 上記で読み込まれているすべてのphp.iniの場所を探し、以下の行をコメントアウトする
+# zend_extension=xdebug.so
 ```
 
-有効にしておくが、表示などはさせないなら以下のようにします。
+有効にしておくが、エラー表示の拡張などはさせないなら以下のようにします。
 
-`/etc/php/conf.d/xdebug.ini`
+`/etc/php/conf.d/xdebug.ini (など)`
 ```
 xdebug.default_enable=0
 xdebug.remote_autostart=0  
@@ -305,20 +333,18 @@ xdebug.profiler_enable=0
 
 `.htaccess`
 ```
-php_flag xdebug.default_enable 1
+php_flag xdebug.default_enable 0
 # など
 ```
 
 `コード内の場合`
 ```
 <?php
-ini_set('xdebug.default_enable','1');
+ini_set('xdebug.default_enable','0');
+# など
 ```
 
-
-## 運用
-
-### パッケージのアップデート
+## 運用、パッケージのアップデート
 
 ソフトウェアの適切なバージョンアップは脆弱性の対応に必須です。もしソフトウェアはパッケージで導入しているなら、パッケージマネージャに頼る事ができます。随時`apt update; apt upgrade`を実行し、アップデートしましょう。
 

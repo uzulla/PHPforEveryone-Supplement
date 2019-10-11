@@ -42,7 +42,7 @@ task('deploy', [
     'deploy:vendors', // composer install
     'deploy:writable', // change permission
 //    'deploy:clear_paths',
-    // 'backend_db_reset', // 本番なら不要
+//    'backend_db_reset', // 本番なら不要
     'deploy:symlink',
     'deploy:unlock',
     'cleanup',
@@ -52,20 +52,10 @@ task('deploy', [
 // [Optional] If deploy fails automatically unlock.
 after('deploy:failed', 'deploy:unlock');
 
-// DB初期化（開発用のsqliteのみ）
+// DB初期化（開発用のsqliteの例）
 // task('backend_db_reset', function () use ($sqlite_data_reset_flag) {
 //     if ($sqlite_data_reset_flag) {
 //         $orig_release_path = get('orig_release_path');
 //         run("cd {$orig_release_path} && make backend-db-reset && chmod 666 backend/sqlite.db");
 //     }
 // });
-
-// PHP（backend）のComposer.json設置ディレクトリがサブディレクトリなので移動する
-// task('change_cwd', function () {
-//     set('orig_release_path', get('release_path'));
-//     $subdir = get('release_path') . DIRECTORY_SEPARATOR . 'backend';
-//     set('release_path', $subdir);
-//     run('cd {{release_path}}');
-// });
-// after('deploy:update_code', 'change_cwd');
-
