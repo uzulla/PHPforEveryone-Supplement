@@ -4,7 +4,7 @@
 
 ## 書籍URL
 
-{TBD}
+- [Amazon](https://amzn.to/2O40XWZ)
 
 ## サンプルコード
 
@@ -22,4 +22,8 @@
 ## レンタルサーバー節
 
 [README](4_hosting-server.md)
+
+## おまけ
+
+[おまけ](/rejected_manuscripts)
 
